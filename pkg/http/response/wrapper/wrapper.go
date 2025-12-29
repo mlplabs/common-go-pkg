@@ -3,7 +3,7 @@ package response
 import (
 	"encoding/json"
 	"fmt"
-	"git.puls.ru/3pl/xpl/common-utils/pkg/http/errors"
+	"github.com/mlplabs/common-go-pkg/pkg/http/errors"
 	"net/http"
 	"reflect"
 )
