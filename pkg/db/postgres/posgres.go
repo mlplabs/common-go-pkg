@@ -30,9 +30,9 @@ func Connect(cfg *Config) (*sql.DB, error) {
 		return nil, fmt.Errorf("connectDb. Failed to open db: %w", err)
 	}
 
-	db.SetConnMaxIdleTime(_defaultMaxConnectionIdleTime)
-	db.SetMaxOpenConns(_defaultMaxOpenConnections)
-	db.SetMaxIdleConns(_defaultMaxPoolSize)
+	//db.SetConnMaxIdleTime(_defaultMaxConnectionIdleTime)
+	//db.SetMaxOpenConns(_defaultMaxOpenConnections)
+	//db.SetMaxIdleConns(_defaultMaxPoolSize)
 
 	if err := db.Ping(); err != nil {
 		return nil, fmt.Errorf("connectDb. Failed to ping db: %w", err)
