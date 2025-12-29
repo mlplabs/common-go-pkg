@@ -5,8 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	domainErrors "git.puls.ru/3pl/xpl/common-utils/pkg/domain/errors"
-	httpErrors "git.puls.ru/3pl/xpl/common-utils/pkg/http/errors"
+
+	httpErrors "github.com/mlplabs/common-go-pkg/pkg/http/errors"
+	customErrors "github.com/mlplabs/common-go-pkg/pkg/http/errors/custom"
 	"io"
 	"net/http"
 )
@@ -192,7 +193,7 @@ func (c *Client) ParseError(statusCode int) error {
 	if err != nil {
 		return fmt.Errorf("client error: can not unmarshal body from %s: %s", c.ownerServiceName, err)
 	}
-	return domainErrors.NewCommonError(
+	return customErrors.NewCommonError(
 		statusCode,
 		r.Error.Code,
 		nil,
