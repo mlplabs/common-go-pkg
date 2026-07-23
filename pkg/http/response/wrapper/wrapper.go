@@ -1,4 +1,4 @@
-package response
+package wrapper
 
 import (
 	"encoding/json"
