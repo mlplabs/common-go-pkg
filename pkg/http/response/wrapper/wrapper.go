@@ -3,12 +3,13 @@ package response
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/mlplabs/common-go-pkg/pkg/http/errors"
 	"net/http"
 	"reflect"
+
+	"github.com/mlplabs/common-go-pkg/pkg/http/errors"
 )
 
-type PlainData struct {
+type Data struct {
 	Data interface{} `json:"data"`
 }
 
@@ -57,7 +58,8 @@ func (rw *Wrapper) Empty(ctrlFunc func(w http.ResponseWriter, r *http.Request) e
 	}
 }
 
-func (rw *Wrapper) Data(ctrlFunc func(w http.ResponseWriter, r *http.Request) (interface{}, error)) http.HandlerFunc {
+// Plain return data as is
+func (rw *Wrapper) Plain(ctrlFunc func(w http.ResponseWriter, r *http.Request) (interface{}, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		data, err := ctrlFunc(w, r)
 		if err != nil {
@@ -68,14 +70,14 @@ func (rw *Wrapper) Data(ctrlFunc func(w http.ResponseWriter, r *http.Request) (i
 	}
 }
 
-func (rw *Wrapper) DataPlain(ctrlFunc func(w http.ResponseWriter, r *http.Request) (interface{}, error)) http.HandlerFunc {
+func (rw *Wrapper) Data(ctrlFunc func(w http.ResponseWriter, r *http.Request) (interface{}, error)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		data, err := ctrlFunc(w, r)
 		if err != nil {
 			errors.SetError(w, r, err)
 			return
 		}
-		rw.response(w, PlainData{
+		rw.response(w, Data{
 			Data: data,
 		})
 	}
