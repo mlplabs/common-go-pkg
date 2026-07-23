@@ -1,0 +1,45 @@
+version: "2"
+run:
+  issues-exit-code: 1
+linters:
+  default: all
+  disable:
+    - varnamelen
+    - noinlineerr
+    - depguard
+    - err113
+    - errcheck
+    - gochecknoglobals
+    - goconst
+    - gomoddirectives
+    - ireturn
+    - revive
+    - tagliatelle
+    - wsl
+    - godot
+    - interfacebloat
+    - dupword
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+      - _test\.go
+issues:
+  max-issues-per-linter: 100
+  max-same-issues: 4
+  new: false
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+      - _test\.go

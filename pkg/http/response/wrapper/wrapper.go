@@ -29,6 +29,15 @@ type Pagination struct {
 	DataRange
 }
 
+type Meta struct {
+	NextPageToken *string `json:"next_page_token,omitempty"`
+}
+
+type Scroll struct {
+	Meta *Meta       `json:"meta"`
+	Data interface{} `json:"data"`
+}
+
 type Wrapper struct{}
 
 func NewWrapper() *Wrapper {
@@ -42,6 +51,7 @@ func (rw *Wrapper) response(w http.ResponseWriter, data interface{}) {
 			errors.SetError(w, nil, err)
 			return
 		}
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write(body)
 	}
@@ -114,6 +124,20 @@ func (rw *Wrapper) DataPages(ctrlFunc func(w http.ResponseWriter, r *http.Reques
 		rw.response(w, Pagination{
 			Data:      data,
 			DataRange: *params,
+		})
+	}
+}
+
+func (rw *Wrapper) DataScroll(ctrlFunc func(w http.ResponseWriter, r *http.Request) (interface{}, *Meta, error)) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		data, meta, err := ctrlFunc(w, r)
+		if err != nil {
+			errors.SetError(w, r, err)
+			return
+		}
+		rw.response(w, Scroll{
+			Data: data,
+			Meta: meta,
 		})
 	}
 }
