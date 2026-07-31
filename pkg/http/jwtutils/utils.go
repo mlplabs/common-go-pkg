@@ -1,11 +1,14 @@
 package jwtutils
 
 import (
-	"bytes"
-	"encoding/json"
+	"context"
 	"errors"
 	"fmt"
+
 	"github.com/golang-jwt/jwt"
+	domainErr "github.com/mlplabs/common-go-pkg/pkg/http/errors"
+	"github.com/mlplabs/common-go-pkg/pkg/http/errors/custom"
+
 	"net/http"
 	"strings"
 	"time"
@@ -18,23 +21,12 @@ type TokenPair struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
+type CtxId struct{}
+type CtxUserId struct{}
+type CtxOwnerId struct{}
+
 // JSON is a map alias.
 type JSON map[string]interface{}
-
-// RenderJSONWithStatus sends data as json and enforces status code.
-func RenderJSONWithStatus(w http.ResponseWriter, data interface{}, code int) {
-	buf := &bytes.Buffer{}
-	enc := json.NewEncoder(buf)
-	enc.SetEscapeHTML(true)
-	if err := enc.Encode(data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-
-		return
-	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(code)
-	_, _ = w.Write(buf.Bytes())
-}
 
 var (
 	ErrKeyMustBePEMEncoded     = errors.New("Invalid Key: Key must be a PEM encoded PKCS1 or PKCS8 key")
@@ -64,7 +56,7 @@ func validate(h handler) http.Handler {
 func (h *handler) middlewareFuncJWT(w http.ResponseWriter, r *http.Request) {
 	tokenString := ExtractToken(r)
 	if tokenString == "" {
-		RenderJSONWithStatus(w, JSON{"error": "требуется авторизация"}, http.StatusUnauthorized)
+		domainErr.SetError(w, r, custom.NewUnauthorized(errors.New("no token found")))
 		return
 	}
 
@@ -75,14 +67,30 @@ func (h *handler) middlewareFuncJWT(w http.ResponseWriter, r *http.Request) {
 		return []byte(h.key), nil
 	})
 	if err != nil {
-		RenderJSONWithStatus(w, JSON{"error": err.Error()}, http.StatusUnauthorized)
+		domainErr.SetError(w, r, custom.NewUnauthorized(err))
 		return
 	}
 	if !token.Valid {
-		RenderJSONWithStatus(w, JSON{"error": "невалидный токен"}, http.StatusUnauthorized)
+		domainErr.SetError(w, r, custom.NewUnauthorized(errors.New("invalid token")))
 		return
 	}
 	ctx := r.Context()
+	if claims, ok := token.Claims.(jwt.MapClaims); ok {
+		id, ok := claims["id"]
+		if ok {
+			ctx = context.WithValue(ctx, CtxId{}, id)
+		}
+
+		userId, ok := claims["user_id"]
+		if ok {
+			ctx = context.WithValue(ctx, CtxUserId{}, userId)
+		}
+
+		ownerId, ok := claims["owner_id"]
+		if ok {
+			ctx = context.WithValue(ctx, CtxOwnerId{}, ownerId)
+		}
+	}
 	h.handler.ServeHTTP(w, r.WithContext(ctx))
 }
 
@@ -121,4 +129,31 @@ func CreateTokenPair(payload map[string]any, secretKey string, accExpSec int64, 
 		return nil, fmt.Errorf("create signed refresh token string %v", err)
 	}
 	return &TokenPair{accessTokenString, "bearer", accExpSec, refreshTokenSting}, nil
+}
+
+func GetContextId(r *http.Request) (int, error) {
+	uid, ok := r.Context().Value(CtxId{}).(int)
+	if !ok {
+		return 0, fmt.Errorf("user id not found in context")
+	}
+
+	return uid, nil
+}
+
+func GetUserId(r *http.Request) (int, error) {
+	uid, ok := r.Context().Value(CtxUserId{}).(int)
+	if !ok {
+		return 0, fmt.Errorf("user id not found in context")
+	}
+
+	return uid, nil
+}
+
+func GetOwnerId(r *http.Request) (int, error) {
+	uid, ok := r.Context().Value(CtxOwnerId{}).(int)
+	if !ok {
+		return 0, fmt.Errorf("user id not found in context")
+	}
+
+	return uid, nil
 }
